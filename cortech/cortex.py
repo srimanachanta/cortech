@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+import scipy.spatial
 
 import cortech.utils
 from cortech.surface import Surface, Sphere
@@ -45,12 +46,37 @@ class Hemisphere:
     def has_registration(self):
         return self.registration is not None
 
-    def compute_thickness(self) -> None:
-        """Calculate thickness at each vertex of node-matched surfaces."""
+    def compute_thickness(self, method="vertex-to-closest") -> None:
+        """Calculate thickness at each vertex of node-matched surfaces.
 
-        # FIXME this should be a better estimate than simple vertex-to-vertex
-        # distance?
-        return np.linalg.norm(self.pial.vertices - self.white.vertices, axis=1)
+        Parameters
+        ----------
+        method : str
+            `vertex-to-closest`. For each vertex on white (pial), find the
+            closest vertex on pial (white) and compute the average of white-to-
+            pial and pial-to-white.
+
+                d_i = 0.5 * min || V(pial)_j - V(white)_i ||
+                    + 0.5 * min || V(pial)_i - V(white)_j ||
+
+            `vertex-to-vertex`. Calculate the distance between corresponding
+            vertices on white and pial surfaces.
+
+                d_i = || V(pial)_i - V(white)_i ||
+
+        """
+        vw = self.white.vertices
+        vp = self.pial.vertices
+        match method:
+            case "vertex-to-closest":
+                p2w, _ = scipy.spatial.KDTree(vw).query(vp)
+                w2p, _ = scipy.spatial.KDTree(vp).query(vw)
+                thickness = 0.5 * p2w + 0.5 * w2p
+            case "vertex-to-vertex":
+                thickness = np.linalg.norm(vp - vw, axis=1)
+            case _:
+                raise ValueError(f"Invalid `method` {method}")
+        return thickness
 
     def compute_average_curvature(
         self,
