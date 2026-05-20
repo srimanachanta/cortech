@@ -6,7 +6,6 @@ project(
     default_options: [
         'buildtype=debugoptimized',
         'b_ndebug=if-release',
-        # 'c_std=c99',
         'cpp_std=c++17',
     ],
 )

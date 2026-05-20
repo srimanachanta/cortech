@@ -51,9 +51,27 @@ alpha_wrap_3 = python.extension_module(
     subdir: cgal_dir,
 )
 
+constrained_triangulations = python.extension_module(
+    'constrained_triangulations',
+    cython_gen_cpp.process('constrained_triangulations.pyx'),
+    cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
+    dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
+    install: true,
+    subdir: cgal_dir,
+)
+
 convex_hull_3 = python.extension_module(
     'convex_hull_3',
     cython_gen_cpp.process('convex_hull_3.pyx'),
+    cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
+    dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
+    install: true,
+    subdir: cgal_dir,
+)
+
+mesh_3 = python.extension_module(
+    'mesh_3',
+    cython_gen_cpp.process('mesh_3.pyx'),
     cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
     dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
     install: true,
@@ -69,18 +87,19 @@ pmp = python.extension_module(
     subdir: cgal_dir,
 )
 
-mesh_3 = python.extension_module(
-    'mesh_3',
-    cython_gen_cpp.process('mesh_3.pyx'),
+
+sms = python.extension_module(
+    'surface_mesh_simplification',
+    cython_gen_cpp.process('surface_mesh_simplification.pyx'),
     cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
     dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
     install: true,
     subdir: cgal_dir,
 )
 
-sms = python.extension_module(
-    'surface_mesh_simplification',
-    cython_gen_cpp.process('surface_mesh_simplification.pyx'),
+tetrahedral_remeshing = python.extension_module(
+    'tetrahedral_remeshing',
+    cython_gen_cpp.process('tetrahedral_remeshing.pyx'),
     cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
     dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
     install: true,
