@@ -438,7 +438,7 @@ def isotropic_remeshing_with_id(
         target_edge_length: float,
         n_iter: int = 1,
         protect_constraints: bool = False,
-        apply_to_faces: npt.ArrayLike | None = None,
+        faces_is_selected: npt.ArrayLike | None = None,
     ):
     """Isotropic surface remeshing. Remeshing is achieved by a combination of
     edge splits/flips/collapses, tangential relaxation, and projection back
@@ -467,15 +467,15 @@ def isotropic_remeshing_with_id(
     https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html#gaa5cc92275df27f0baab2472ecbc4ea3f
 
     """
-    apply_to_faces = [] if apply_to_faces is None else apply_to_faces
+    faces_is_selected = [] if faces_is_selected is None else faces_is_selected
 
     cdef np.ndarray[float, ndim=2] cpp_v = np.ascontiguousarray(vertices, dtype=np.float32)
     cdef np.ndarray[int, ndim=2] cpp_f = np.ascontiguousarray(faces, dtype=np.int32)
-    cdef np.ndarray[int] cpp_apply_to_faces = np.ascontiguousarray(apply_to_faces, dtype=np.int32)
+    cdef np.ndarray[int] cpp_faces_is_selected = np.ascontiguousarray(faces_is_selected, dtype=np.int32)
     cdef MeshWithPMaps out
 
     out = pmp_isotropic_remeshing_with_id(
-        cpp_v, cpp_f, target_edge_length, n_iter, protect_constraints, cpp_apply_to_faces,
+        cpp_v, cpp_f, target_edge_length, n_iter, protect_constraints, cpp_faces_is_selected,
     )
     return _from_MeshWithPMaps(out)
 
