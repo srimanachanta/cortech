@@ -51,14 +51,14 @@ alpha_wrap_3 = python.extension_module(
     subdir: cgal_dir,
 )
 
-constrained_triangulations = python.extension_module(
-    'constrained_triangulations',
-    cython_gen_cpp.process('constrained_triangulations.pyx'),
-    cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
-    dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
-    install: true,
-    subdir: cgal_dir,
-)
+# constrained_triangulations = python.extension_module(
+#     'constrained_triangulations',
+#     cython_gen_cpp.process('constrained_triangulations.pyx'),
+#     cpp_args: [cython_cpp_args, cpp_cgal_args, cpp_cgal_macros],
+#     dependencies: [numpy_dep, cgal_dep, cgal_helpers_dep],
+#     install: true,
+#     subdir: cgal_dir,
+# )
 
 convex_hull_3 = python.extension_module(
     'convex_hull_3',
