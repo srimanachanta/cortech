@@ -479,7 +479,7 @@ class Surface:
 
         if smooth_iter > 0:
             k1, k2, H, K = np.ascontiguousarray(
-                self.smooth_gaussian(
+                self.smooth_laplacian(
                     np.stack((k1, k2, H, K), axis=1), n_iter=smooth_iter
                 ).T
             )
@@ -930,10 +930,10 @@ class Surface:
         else:
             return self.new_from(v)
 
-    def _smooth_gaussian_prepare(
+    def _smooth_laplacian_prepare(
         self, arr: npt.NDArray | None = None, inplace: bool = False
     ) -> tuple[npt.NDArray, scipy.sparse.csr_array, npt.NDArray, npt.NDArray | None]:
-        """Precompute a few things needed when applying Gaussian smoothing
+        """Precompute a few things needed when applying Laplacian smoothing
         steps.
 
         nn:
@@ -950,10 +950,10 @@ class Surface:
 
         return arr, A, nn, out
 
-    def _smooth_gaussian_step(
+    def _smooth_laplacian_step(
         self, x: npt.NDArray, a: float, A: scipy.sparse.csr_array, nn, out=None
     ):
-        """Perform a single Gaussian smoothing steps, i.e.,
+        """Perform a single Laplacian smoothing steps, i.e.,
 
             x_i = x_i + a * sum_{j in N(i)} (w_ij * (x_j - x_i))
 
@@ -980,18 +980,18 @@ class Surface:
             out += a * (A @ x / nn - x)
             return out
 
-    def smooth_gaussian(
+    def smooth_laplacian(
         self,
         arr: npt.NDArray | None = None,
         a: float = 0.33,
         n_iter: int = 1,
         inplace: bool = False,
     ):
-        """Perform a number of Gaussian (Laplacian) smoothing steps."""
+        """Perform a number of Laplacian smoothing steps."""
         apply_to_vertices = arr is None
-        arr, A, nn, out = self._smooth_gaussian_prepare(arr, inplace)
+        arr, A, nn, out = self._smooth_laplacian_prepare(arr, inplace)
         for _ in range(n_iter):
-            arr = self._smooth_gaussian_step(arr, a, A, nn, out)
+            arr = self._smooth_laplacian_step(arr, a, A, nn, out)
 
         if apply_to_vertices:
             if inplace:
@@ -1092,8 +1092,8 @@ class Surface:
         n_iter: int = 1,
         inplace: bool = False,
     ):
-        """Perform Taubin smoothing, i.e., Gaussian smoothing step with
-        positive weight (`a`) followed by a Gaussian step with negative weight
+        """Perform Taubin smoothing, i.e., Laplacian smoothing step with
+        positive weight (`a`) followed by a Laplacian step with negative weight
         (`b`).
 
         References
@@ -1102,10 +1102,10 @@ class Surface:
         """
         assert 0 < a < -b, "a should be between 0 and -b."
         apply_to_vertices = arr is None
-        arr, A, nn, out = self._smooth_gaussian_prepare(arr, inplace)
+        arr, A, nn, out = self._smooth_laplacian_prepare(arr, inplace)
         for _ in range(n_iter):
-            arr = self._smooth_gaussian_step(arr, a, A, nn, out)  # Gauss step
-            arr = self._smooth_gaussian_step(arr, b, A, nn, out)  # Taubin step
+            arr = self._smooth_laplacian_step(arr, a, A, nn, out)  # regular step
+            arr = self._smooth_laplacian_step(arr, b, A, nn, out)  # Taubin step
 
         if apply_to_vertices:
             if inplace:

@@ -211,7 +211,7 @@ class TestSurface:
     def test_taubin_smooth(self):
         pass
 
-    def test_gaussian_smooth(self):
+    def test_laplacian_smooth(self):
         pass
 
     def test_get_triangle_neighbors(self, triangulation):
