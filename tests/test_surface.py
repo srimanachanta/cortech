@@ -5,7 +5,7 @@ import tempfile
 import nibabel as nib
 import numpy as np
 import pytest
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 
 from cortech.surface import Sphere, Surface
 from cortech.freesurfer import VolumeGeometry
@@ -454,22 +454,17 @@ class TestSphere:
         weights = rng.uniform(size=(sphere_reg.n_faces, 3))
         weights /= weights.sum(1, keepdims=True)
 
-        # We cheat and use Surface instead of SphericalRegistration to avoid
-        # the vertices being projected back on the sphere, hence rendering the
-        # comparison to the `weights` array invalid
-        n = sphere_reg.n_faces
         # the triangles of the surface being morphed *to* are unused so just
         # generate some random ones
         dest_points = np.sum(sphere_reg.as_mesh() * weights[..., None], 1)
-        dest_sphere = Surface(dest_points, rng.integers(1, n, (2 * n - 4, 3)))
 
-        dest_field = sphere_reg.project_and_resample(
-            dest_sphere, source_field, method=method
+        dest_field = sphere_reg.set_projection_and_resample(
+            dest_points, source_field, method=method
         )
 
         match method:
             case "nearest":
-                _, closest = cKDTree(sphere_reg.vertices).query(dest_sphere.vertices)
+                _, closest = KDTree(sphere_reg.vertices).query(dest_points)
                 # Test projection
                 np.testing.assert_allclose(sphere_reg._proj_matrix.data, 1)
                 # Test sampling
