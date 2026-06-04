@@ -2264,36 +2264,23 @@ class Sphere(Surface):
     def to_spherical_coordinates(self):
         return cortech.sphere_utils.cart_to_sph(self.vertices)
 
-    @property
-    def proj_matrix(self):
-        return self._proj_matrix
-
-    @proj_matrix.setter
-    def proj_matrix(self, value):
-        self._proj_matrix = value
-
-    def project(
-        self,
-        target: "Sphere",
-        method: str = "linear",
-        n_closest_vertices: int = 5,
+    def set_projection(
+        self, points: npt.NDArray, method: str = "linear", n_closest_vertices: int = 5
     ):
-        """Project `self` to `target`, i.e., compute a mapping that can be used
-        to map vertex data from `self` to the vertices of `target`. The mapping
-        is estimated by projecting the vertices of `target` onto the surface of
-        `self`.
+        """Project `points` to `self`, i.e., compute a mapping that can be used
+        to map vertex data from `self` to `points`.
 
         The projection matrix is a sparse matrix with dimensions
-        (target.n_vertices, self.n_vertices) where each row has exactly one
+        (len(points), self.n_vertices) where each row has exactly one
         (nearest) or three (linear) entries that sum to one.
 
         For example, to map data from fsaverage to subject space,
 
-            fsavg_data = ...
+            data_on_fsavg = ...
             fsavg = SphericalRegistration( ... )
             subject = SphericalRegistration( ... )
-            fsavg.project(subject)
-            subject_data = fsavg.resample( fsavg_data )
+            fsavg.project(subject.vertices)
+            data_on_subject = fsavg.resample( data_on_fsavg )
 
         PARAMETERS
         ----------
@@ -2308,17 +2295,17 @@ class Sphere(Surface):
             `self`. We find the triangles to which these points belong and then
             test only against these triangles.
         """
+        n_points, n_dim = points.shape
+
         match method:
             case "nearest":
                 kdtree = scipy.spatial.cKDTree(self.vertices)
-                cols = kdtree.query(target.vertices)[1]
-                rows = np.arange(target.n_vertices)
-                weights = np.ones(target.n_vertices, dtype=int)
+                cols = kdtree.query(points)[1]
+                rows = np.arange(n_points)
+                weights = np.ones(n_points, dtype=int)
             case "linear":
-                tris, weights, _, _ = self.project_points(
-                    target.vertices, n_closest_vertices
-                )
-                rows = np.repeat(np.arange(target.n_vertices), target.n_dim)
+                tris, weights, _, _ = self.project_points(points, n_closest_vertices)
+                rows = np.repeat(np.arange(n_points), n_dim)
                 cols = self.faces[tris].ravel()
                 weights = weights.ravel()
             case _:
@@ -2326,33 +2313,37 @@ class Sphere(Surface):
                     f"Invalid projection method, please select `nearest` or `linear` (got {method})."
                 )
 
-        self.proj_matrix = scipy.sparse.csr_array(
-            (weights, (rows, cols)), shape=(target.n_vertices, self.n_vertices)
+        self._proj_matrix = scipy.sparse.csr_array(
+            (weights, (rows, cols)), shape=(n_points, self.n_vertices)
         )
-        self.proj_matrix.sum_duplicates()
+        self._proj_matrix.sum_duplicates()
 
     def resample(self, values: npt.NDArray):
-        """Pull values defined on `self` to the vertices of the target surface
-        used as input to `project`.
+        """Pull values defined on `self` to the points used as input to
+        `set_projection`.
 
         Parameters
         ----------
         values : npt.NDArray
-            Data to map to the target surface. The shape is (self.n_vertices, ...)
+            Data to map to the target points. The shape must be
+            (self.n_vertices, ...)
 
         Returns
         -------
         mapped values: npt.NDArray
-            Data mapped onto the target surface. The shape is (target.n_vertices, ...)
+            Data mapped onto the target surface. The shape is
+            (len(points), ...)
         """
-        if self.proj_matrix is None:
-            raise RuntimeError("No projection matrix found. Please run `project`.")
-        return self.proj_matrix @ values
+        if self._proj_matrix is None:
+            raise RuntimeError(
+                "No projection matrix found. Please run `set_projection`."
+            )
+        return self._proj_matrix @ values
 
-    def project_and_resample(
-        self, target: "Sphere", values: npt.NDArray, *args, **kwargs
+    def set_projection_and_resample(
+        self, target_points: npt.NDArray, values: npt.NDArray, *args, **kwargs
     ):
-        self.project(target, *args, **kwargs)
+        self.set_projection(target_points, *args, **kwargs)
         return self.resample(values)
 
 
