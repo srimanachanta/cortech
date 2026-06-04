@@ -3,7 +3,7 @@ import numba.typed
 import numpy as np
 import numpy.typing as npt
 
-from cortech.utils_cpp import map_values
+# from cortech.utils_cpp import map_values
 
 
 def atleast_nd_append(arr, n):
@@ -57,7 +57,12 @@ def normalize(arr: npt.NDArray, axis=None, inplace: bool = False):
     """
     size = np.linalg.norm(arr, axis=axis, keepdims=True)
     if inplace:
-        np.divide(arr, size, out=arr, where=size != 0)
+        np.divide(
+            arr,
+            size,
+            out=arr,
+            where=size != 0,
+        )
     else:
         return np.divide(arr, size, out=None, where=size != 0)
 
