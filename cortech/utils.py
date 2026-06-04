@@ -3,6 +3,8 @@ import numba.typed
 import numpy as np
 import numpy.typing as npt
 
+from cortech.utils_cpp import map_values
+
 
 def atleast_nd_append(arr, n):
     if arr.ndim == n:
@@ -55,9 +57,9 @@ def normalize(arr: npt.NDArray, axis=None, inplace: bool = False):
     """
     size = np.linalg.norm(arr, axis=axis, keepdims=True)
     if inplace:
-        np.divide(arr, size, where=size != 0, out=arr)
+        np.divide(arr, size, out=arr, where=size != 0)
     else:
-        return np.divide(arr, size, where=size != 0)
+        return np.divide(arr, size, out=None, where=size != 0)
 
 
 def compute_sphere_radius(
@@ -254,6 +256,7 @@ def bfs(
         The indices of neighboring vertices.
     visited_level
         The
+
     Notes
     -----
     JIT compilation gives approximately 1000x speedup.
@@ -283,3 +286,90 @@ def bfs(
         n_visited,
         level,
     )
+
+
+# @numba.njit
+# def bfs_distance(
+#     max_distance,  #: int,
+#     start_idx,  #: npt.NDArray[int],
+#     conn_idx,  #: npt.NDArray[int],
+#     conn_indptr,  #: npt.NDArray[int],
+#     visited_idx,  #: npt.NDArray[int],
+#     visited_distance,  #: npt.NDArray[int],
+#     is_visited,  #: npt.NDArray[bool],
+#     n_visited,  #: int,
+#     min_distance: int = 0,
+# ):
+#     """Find neighbors less than `max_distance` away using breadth-first search.
+
+#     indices for a given ring is returned by
+
+#         seen_idx[ring_indptr[i]:ring_indptr[i+1]]
+
+#     (like scipy.sparse indices and indptr).
+
+#     Parameters
+#     ----------
+#     max_depth: int
+#         Max depth to recurse into.
+#     start_idx: npt.NDArray[int]
+#         The starting index/indices of the BFS.
+#     conn_idx: npt.NDArray[int]
+#         Vertex connectivity information. This corresponds to the information
+#         in the `indices` field in scipy.sparse CSR format.
+#     conn_indptr: npt.NDArray[int],
+#         Vertex connectivity information whose values define slices into
+#         `conn_idx`. This corresponds to the information in the `indptr` field
+#         in scipy.sparse CSR format.
+#     edge_lengths:
+
+#     visited_idx: npt.NDArray[int]
+#         Array to hold the indices of the visited (neighboring) vertices.
+#     visited_level: npt.NDArray[int]
+#         Array to hold the information about the depth level to which the
+#         indices in `visited_idx` belongs. Length is `max_depth + 2`.
+#     is_visited: npt.NDArray[bool]
+#         Boolean array indicating if a vertex has already been visited.
+#     n_visited: int
+#         Number of vertices that has been visited already.
+#     level: int = 0
+#         Current level/depth.
+
+#     Returns
+#     -------
+#     visited_idx
+#         The indices of neighboring vertices.
+#     visited_level
+#         The
+
+#     Notes
+#     -----
+#     JIT compilation gives approximately 1000x speedup.
+#     """
+#     if level >= max_depth:
+#         return visited_idx[:n_visited], visited_distance[:n_visited]
+
+#     level += 1
+#     n_visited_current = 0
+#     for i in start_idx:
+#         for j in conn_idx[conn_indptr[i] : conn_indptr[i + 1]]:
+#             if not is_visited[j]:
+#                 is_visited[j] = True
+#                 visited_idx[n_visited] = j
+#                 edge_length[i, j]
+
+#                 n_visited_current += 1
+#                 n_visited += 1
+#     visited_distance[level + 1] = n_visited
+
+#     return bfs_distance(
+#         max_depth,
+#         visited_idx[n_visited - n_visited_current : n_visited],
+#         conn_idx,
+#         conn_indptr,
+#         visited_idx,
+#         visited_distance,
+#         is_visited,
+#         n_visited,
+#         level,
+#     )
