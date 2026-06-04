@@ -81,6 +81,27 @@ cdef extern from "polygon_mesh_processing_src.cpp" nogil:
         cppbool protect_constraints,
         vector[int] faces_is_selected,
     ) except +
+    MeshOutput pmp_adaptive_remeshing(
+        PointVector vertices,
+        IndexVector faces,
+        double error_tol,
+        double edge_length_min,
+        double edge_length_max,
+        int n_iter,
+        cppbool protect_constraints,
+        vector[int] faces_is_selected,
+    ) except +
+    MeshOutput pmp_adaptive_remeshing(
+        PointVector vertices,
+        IndexVector faces,
+        double error_tol,
+        double edge_length_min,
+        double edge_length_max,
+        int n_iter,
+        cppbool protect_constraints,
+        vector[int] faces_is_selected,
+        vector[vector[int]] edges_is_constrained,
+    ) except +
 
     MeshOutput pmp_merge_duplicate_points_in_polygon_soup(
         PointVector vertices, IndexVector faces
@@ -478,6 +499,67 @@ def isotropic_remeshing_with_id(
         cpp_v, cpp_f, target_edge_length, n_iter, protect_constraints, cpp_faces_is_selected,
     )
     return _from_MeshWithPMaps(out)
+
+
+def adaptive_remeshing(
+        vertices: npt.ArrayLike,
+        faces: npt.ArrayLike,
+        error_tol: float,
+        edge_length_min: float,
+        edge_length_max: float,
+        n_iter: int = 1,
+        protect_constraints: bool = False,
+        faces_is_selected: npt.ArrayLike | None = None,
+        edges_is_constrained: npt.ArrayLike | None = None,
+    ):
+    """Isotropic surface remeshing. Remeshing is achieved by a combination of
+    edge splits/flips/collapses, tangential relaxation, and projection back
+    onto the original surface.
+
+    Parameters
+    ----------
+    vertices: npt.ArrayLike
+    faces: npt.ArrayLike
+    target_edge_length: float
+        The target edge length for the isotropic remesher. This defines the
+        resolution of the resulting surface.
+    n_iter: int
+        Number of iterations of the above-mentioned atomic operations.
+
+    Returns
+    -------
+    v : npt.NDArray
+        The new vertices.
+    f : npt.NDArray
+        The new faces.
+
+    References
+    ----------
+
+    https://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html#gaa5cc92275df27f0baab2472ecbc4ea3f
+
+    """
+    faces_is_selected = [] if faces_is_selected is None else faces_is_selected
+    no_edges_is_constrained = edges_is_constrained is None
+    edges_is_constrained = [[]] if no_edges_is_constrained else edges_is_constrained
+
+    cdef np.ndarray[float, ndim=2] cv = np.ascontiguousarray(vertices, dtype=np.float32)
+    cdef np.ndarray[int, ndim=2] cf = np.ascontiguousarray(faces, dtype=np.int32)
+    cdef np.ndarray[int] cpp_faces_is_selected = np.ascontiguousarray(faces_is_selected, dtype=np.int32)
+    cdef vector[vector[int]] cpp_constr_edges
+    cdef MeshOutput out
+
+    if no_edges_is_constrained:
+        out = pmp_adaptive_remeshing(
+            cv, cf, error_tol, edge_length_min, edge_length_max, n_iter, protect_constraints, cpp_faces_is_selected
+        )
+    else:
+        cpp_constr_edges = np.ascontiguousarray(edges_is_constrained, dtype=np.int32)
+        out = pmp_adaptive_remeshing(
+            cv, cf, error_tol, edge_length_min, edge_length_max, n_iter, protect_constraints, cpp_faces_is_selected, cpp_constr_edges,
+        )
+
+    return _from_MeshOutput(out)
 
 def merge_duplicate_points_in_polygon_soup(vertices: npt.ArrayLike, faces: npt.ArrayLike):
     cdef np.ndarray[float, ndim=2] cpp_v = np.ascontiguousarray(vertices, dtype=np.float32)

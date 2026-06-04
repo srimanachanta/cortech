@@ -3,30 +3,30 @@
 #include <vector>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Side_of_triangle_mesh.h>
 #include <CGAL/Surface_mesh.h>
 
+#include <CGAL/Polygon_mesh_processing/Adaptive_sizing_field.h>
 #include <CGAL/Polygon_mesh_processing/angle_and_area_smoothing.h>
+#include <CGAL/Polygon_mesh_processing/border.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
 // #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/fair.h>
+#include <CGAL/Polygon_mesh_processing/interpolated_corrected_curvatures.h>
 #include <CGAL/Polygon_mesh_processing/intersection.h>
+#include <CGAL/Polygon_mesh_processing/orient_polygon_soup_extension.h>
+#include <CGAL/Polygon_mesh_processing/orientation.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
+#include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/repair_self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/smooth_shape.h>
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
 #include <CGAL/Polygon_mesh_processing/tangential_relaxation.h>
-#include <CGAL/Polygon_mesh_processing/interpolated_corrected_curvatures.h>
-#include <CGAL/Polygon_mesh_processing/orientation.h>
-
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
-#include <CGAL/Polygon_mesh_processing/border.h>
-#include <CGAL/Polygon_mesh_processing/orient_polygon_soup_extension.h>
-#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
-#include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
 // #include <CGAL/Polygon_mesh_processing/internal/Snapping/snap.h>
-#include <CGAL/Side_of_triangle_mesh.h>
 
 #include <cgal_helpers.h>
 
@@ -731,6 +731,95 @@ MeshWithPMaps pmp_isotropic_remeshing_with_id(
         original_face_index[i++] = orig_f_id[f];
 
     return {pair.first, pair.second, original_vertex_index, original_face_index};
+}
+
+MeshOutput pmp_adaptive_remeshing(
+    vector<vector<float>> vertices,
+    vector<vector<int>> faces,
+    double error_tol,
+    double edge_length_min,
+    double edge_length_max,
+    int n_iterations = 1,
+    bool protect_constraints = false,
+    vector<int> faces_is_selected = {},
+    vector<vector<int>> edges_is_constrained = {})
+{
+    auto mesh_and_v2v = cortech::from_polygon_soup_with_vertex_map(vertices, faces);
+    Surface_mesh &mesh = mesh_and_v2v.first;
+    vector<Vertex_index> &v2v = mesh_and_v2v.second;
+
+    const std::pair min_max_length{edge_length_min, edge_length_max};
+
+    if (faces_is_selected.empty())
+    {
+        PMP::Adaptive_sizing_field<Surface_mesh> sizing_field(
+            error_tol, min_max_length, mesh.faces(), mesh);
+
+        if (edges_is_constrained.empty())
+        {
+
+            PMP::isotropic_remeshing(
+                mesh.faces(),
+                sizing_field,
+                mesh,
+                CGAL::parameters::number_of_iterations(n_iterations)
+                    .protect_constraints(protect_constraints));
+        }
+        else
+        {
+
+            auto ecs = make_edges_is_constrained_set(mesh, edges_is_constrained, v2v);
+            CGAL::Boolean_property_map<std::set<Edge_index>> ecm(ecs);
+            PMP::isotropic_remeshing(
+                mesh.faces(),
+                sizing_field,
+                mesh,
+                CGAL::parameters::number_of_iterations(n_iterations)
+                    .protect_constraints(protect_constraints)
+                    .edge_is_constrained_map(ecm));
+        }
+    }
+    else
+    {
+        vector<Face_index> faces_to_remesh(faces_is_selected.size());
+        for (int i = 0; i < faces_is_selected.size(); i++)
+            faces_to_remesh[i] = Face_index(faces_is_selected[i]);
+
+        PMP::Adaptive_sizing_field<Surface_mesh> sizing_field(
+            error_tol, min_max_length, faces_to_remesh, mesh);
+
+        if (edges_is_constrained.empty())
+        {
+            PMP::isotropic_remeshing(
+                faces_to_remesh,
+                sizing_field,
+                mesh,
+                CGAL::parameters::number_of_iterations(n_iterations)
+                    .protect_constraints(protect_constraints));
+        }
+        else
+        {
+            auto ecs = make_edges_is_constrained_set(mesh, edges_is_constrained, v2v);
+            CGAL::Boolean_property_map<std::set<Edge_index>> ecm(ecs);
+            PMP::isotropic_remeshing(
+                faces_to_remesh,
+                sizing_field,
+                mesh,
+                CGAL::parameters::number_of_iterations(n_iterations)
+                    .protect_constraints(protect_constraints)
+                    .edge_is_constrained_map(ecm));
+        }
+    }
+
+    // explicit garbage collection needed as vertices are only *marked* as removed
+    //
+    //   https://github.com/CGAL/cgal/discussions/6625
+    //   https://doc.cgal.org/latest/Surface_mesh/index.html#sectionSurfaceMesh_memory
+    mesh.collect_garbage();
+
+    auto pair = cortech::extract_vertices_and_faces(mesh);
+
+    return {pair.first, pair.second};
 }
 
 MeshOutput pmp_merge_duplicate_points_in_polygon_soup(
