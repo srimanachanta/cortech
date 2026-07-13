@@ -182,13 +182,20 @@ class TestSurface:
         diamond_clean = diamond_intersect.remove_self_intersections()
         assert len(diamond_clean.self_intersections()) == 0
 
+    def test_connected_components(self, diamond):
+        cc_label, cc_size = diamond.connected_components()
+        np.testing.assert_allclose(cc_label, 0)
+        np.testing.assert_allclose(cc_size, diamond.n_faces)
+
     def test_connected_components_cgal(self, diamond):
         cc_label, cc_size = diamond.connected_components_cgal()
         np.testing.assert_allclose(cc_label, 0)
         np.testing.assert_allclose(cc_size, diamond.n_faces)
 
     def test_connected_components_cgal_constrained(self, diamond):
-        cc_label, cc_size = diamond.connected_components_cgal([[0, 1, 2, 3]])
+        # constrained the edges separating vertex 0 and 5 (top and bottom)
+        cc_label, cc_size = diamond.connected_components_cgal(
+            [[1, 2], [2, 3], [3, 4], [4, 1]])
         n = diamond.n_faces // 2
         np.testing.assert_allclose(
             cc_label, np.concatenate((np.full(n, 0), np.full(n, 1)))
@@ -200,7 +207,7 @@ class TestSurface:
         is_inside = diamond.points_inside(diamond_barycenters * (1 - eps))
         np.testing.assert_allclose(is_inside, True)
 
-    def test_points_outside_surface(self, diamond, diamond_barycenters, eps=1e-6):
+    def test_points_outside(self, diamond, diamond_barycenters, eps=1e-6):
         # Move points outwards
         is_inside = diamond.points_inside(diamond_barycenters * (1 + eps))
         np.testing.assert_allclose(is_inside, False)
