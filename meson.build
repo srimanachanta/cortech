@@ -7,6 +7,11 @@ project(
         'buildtype=debugoptimized',
         'b_ndebug=if-release',
         'cpp_std=c++17',
+        # let meson set appropriate flags for things it knows about
+        # apply standard link-time optimizer
+        'b_lto=true',
+        # optimize for size (similar to setting -Os)
+        'optimization=s',
     ],
 )
 
@@ -31,14 +36,6 @@ cython_prog = find_program(cython.cmd_array()[0])
 
 # GLOBAL compiler arguments
 
-# if host_os == 'linux'
-#
-# elif host_os == 'darwin'
-#
-# elif host_os == 'windows'
-#
-# endif
-
 # GCC options
 # warnings      https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 # optimization  https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html
@@ -47,29 +44,30 @@ cython_prog = find_program(cython.cmd_array()[0])
 
 # When buildtype=debug, meson automatically sets things like -g and -Wall
 
+# cython: .pyx -> .cpp
 cython_cpp_args = cpp.get_supported_arguments(
     # NumPy and Boost cause various warnings. Suppress them
     '-Wno-cpp',
     '-Wno-nonnull',
     '-Wno-sign-compare',
     '-Wno-unused-value',
-    '-Os',              # optimize for size
-    '-flto=auto',       # apply standard link-time optimizer
+)
+add_project_arguments(cython_cpp_args, language: 'cython')
+
+# c++: .cpp -> .so
+cpp_args = cpp.get_supported_arguments(
     '-frounding-math',  # Disable optimizations related to float rounding
 )
 
-cython_cpp_args = cpp.get_supported_arguments(
-)
 # if host_os == 'linux'
 # elif host_os == 'darwin'
 if host_os == 'windows'
-    win_args = cpp.get_supported_arguments(
-        '/bigobj',      # allow large obj files
-    )
-    cython_cpp_args += win_args
+    # allow large obj files
+    win_args = cpp.get_supported_arguments('/bigobj')
+    cpp_args += win_args
 endif
 
-add_project_arguments(cython_cpp_args, language: 'cython')
+add_project_arguments(cpp_args, language: 'cpp')
 
 # ==== GENERATORS ====
 
