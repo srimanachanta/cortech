@@ -3,7 +3,11 @@ import numba.typed
 import numpy as np
 import numpy.typing as npt
 
-# from cortech.utils_cpp import map_values
+from cortech.utils_cpp import map_values
+
+__all__ = ["map_values"]
+
+
 
 
 def atleast_nd_append(arr, n):

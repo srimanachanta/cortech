@@ -47,15 +47,29 @@ cython_prog = find_program(cython.cmd_array()[0])
 
 # When buildtype=debug, meson automatically sets things like -g and -Wall
 
-# NumPy and Boost cause various warnings. Suppress them
 cython_cpp_args = cpp.get_supported_arguments(
+    # NumPy and Boost cause various warnings. Suppress them
     '-Wno-cpp',
     '-Wno-nonnull',
     '-Wno-sign-compare',
     '-Wno-unused-value',
+    '-Os',              # optimize for size
+    '-flto=auto',       # apply standard link-time optimizer
+    '-frounding-math',  # Disable optimizations related to float rounding
 )
-add_project_arguments(cython_cpp_args, language: 'cython')
 
+cython_cpp_args = cpp.get_supported_arguments(
+)
+# if host_os == 'linux'
+# elif host_os == 'darwin'
+if host_os == 'windows'
+    win_args = cpp.get_supported_arguments(
+        '/bigobj',      # allow large obj files
+    )
+    cython_cpp_args += win_args
+endif
+
+add_project_arguments(cython_cpp_args, language: 'cython')
 
 # ==== GENERATORS ====
 
@@ -92,7 +106,7 @@ incdir_numpy = run_command(
 numpy_include = include_directories(incdir_numpy)
 
 numpy_dep = declare_dependency(include_directories: numpy_include)
-cgal_dep = dependency('cgal', version: '>= 6.0')
+cgal_dep = dependency('cgal', version: '>= 6.2')
 # ceres_dep = dependency('ceres-solver', version: '>= 2.2')
 # files = ['3RD-PARTY.md', 'LICENSE.txt', 'README.md']
 # install_data(files, install_dir: simnibs_install_dir / 'simnibs')

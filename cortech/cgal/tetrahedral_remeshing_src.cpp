@@ -421,7 +421,7 @@ cortech::VolumeMeshWithPMaps tetrahedral_remeshing_remesh(
     using Facet = std::array<int, 3>; // 3 = id
     Facet f;
     boost::unordered_map<Facet, Surface_patch_index> border_facets(faces.size());
-    for (int i = 0; i < faces.size(); ++i)
+    for (std::size_t i = 0; i < faces.size(); ++i)
     {
         auto &tmp = faces[i];
         f[0] = tmp[0];
