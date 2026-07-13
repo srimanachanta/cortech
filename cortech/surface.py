@@ -2463,8 +2463,8 @@ class ManifoldSurface(NonManifoldSurface):
         """
         a = 6.928203230275509  # 4 * sqrt(3.0)
         A = self.face_areas()
-        E = self.edges_norm()
-        return a * A / np.sum(E**2, 1)  # 0=worst, 1=best
+        E = self.edges_norm().reshape(-1,3)
+        return a * A / np.sum(E**2, -1)  # 0=worst, 1=best
 
     def vertex_normals(self):
         """ """
@@ -3354,6 +3354,8 @@ Surface = ManifoldSurface
 
 class FixedTopologySurface(ManifoldSurface):
     def __init__(self, vertices, faces, **kwargs):
+        # when the topology is fixed, we do not need to check it
+        kwargs["check_topology"] = False
         super().__init__(vertices, faces, **kwargs)
 
     def subdivide(self, *args, **kwargs):
@@ -3401,6 +3403,8 @@ class FixedTopologySurface(ManifoldSurface):
 class DeepSurferSurface(FixedTopologySurface):
     def __init__(self, vertices, faces, **kwargs):
         # this cannot be specified
+        assert len(vertices) == 245762
+        assert len(faces) == 491520
         kwargs["edge_pairs"] = np.array([[0, 1], [1, 2], [2, 0]])
         super().__init__(vertices, faces, **kwargs)
 
