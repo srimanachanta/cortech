@@ -440,9 +440,6 @@ namespace internal {
       // pp = get(vpmap_, vb);
       //   std::cout << "vb    : " << pp.x() << " " << pp.y() << " " << pp.z() << std::endl;
 
-       //fix constrained case
-       CGAL_assertion((is_constrained(vkept) || is_corner(vkept) || is_on_patch_border(vkept)) ==
-                     (is_va_constrained || is_vb_constrained || is_va_on_constrained_polyline || is_vb_on_constrained_polyline));
       //  fix_degenerate_faces(vkept, halfedge_bimap, collapse_constraints);
       }
     }

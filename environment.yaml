@@ -2,13 +2,17 @@ name: cortech
 channels:
   - conda-forge
 dependencies:
-  - python = 3.11
-  - cgal-cpp >= 6.0
-  - cython
-  - meson-python
-  - nibabel
-  - numba
-  - numpy
+  - python >= 3.11, < 3.15
+  - boost >= 1.74
+  - eigen >= 3.4
+  - gmp
+  - mpfr
   - pkg-config
-  - pyvista
-  - scipy
+  - cython >= 3.1.4
+  - meson >= 1.4.1
+  - meson-python >= 0.15.0
+  - nibabel >= 5.3.0
+  - numba >= 0.63.0
+  - numpy >= 2.3.2
+  - pyvista >= 0.47.0
+  - scipy >= 1.16.1

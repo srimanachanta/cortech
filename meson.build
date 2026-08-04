@@ -2,7 +2,7 @@ project(
     'cortech',
     'cpp', 'cython',
     version: '0.1',
-    meson_version: '>= 1.2',
+    meson_version: '>= 1.4.1',
     default_options: [
         'buildtype=debugoptimized',
         'b_ndebug=if-release',
@@ -104,7 +104,9 @@ incdir_numpy = run_command(
 numpy_include = include_directories(incdir_numpy)
 
 numpy_dep = declare_dependency(include_directories: numpy_include)
-cgal_dep = dependency('cgal', version: '>= 6.2')
+# Boost, Eigen, GMP and MPFR are CGAL's dependencies; they are located by the
+# cgal wrap (subprojects/packagefiles/cgal/meson.build)
+cgal_dep = dependency('cgal', version: '>= 6.2', fallback: ['cgal', 'cgal_dep'])
 # ceres_dep = dependency('ceres-solver', version: '>= 2.2')
 # files = ['3RD-PARTY.md', 'LICENSE.txt', 'README.md']
 # install_data(files, install_dir: simnibs_install_dir / 'simnibs')

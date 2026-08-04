@@ -6,7 +6,10 @@ python_sources = [
 python.install_sources(python_sources, subdir: cgal_dir)
 
 cpp_cgal_macros = [
-    '-DCGAL_EIGEN3_ENABLED'#, '-DCGAL_PMP_USE_CERES_SOLVER'
+    '-DCGAL_EIGEN3_ENABLED',
+    '-DCGAL_USE_GMP=1',
+    '-DCGAL_USE_MPFR=1',
+    #, '-DCGAL_PMP_USE_CERES_SOLVER'
 ]
 # PMP area smoothing needs this
 # -DCGAL_PMP_USE_CERES_SOLVER

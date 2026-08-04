@@ -1,6 +1,0 @@
-[requires]
-cgal/6.2
-
-[generators]
-PkgConfigDeps
-MesonToolchain

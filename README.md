@@ -1,35 +1,29 @@
 # cortech
 A suite of tools for cortical layer placement and analysis.
 
+Supports CPython 3.11, 3.12, 3.13, and 3.14.
+
 ## Installation From Source
 
-This package requires compiling some CGAL functions. You can install CGAL using any method you prefer; meson (which we use for building the package) just needs to locate CGAL with pkg-config. Here we describe the installation using Conan or Conda for managing the c++ dependencies.
+This package compiles some CGAL functions. CGAL itself is fetched and built automatically by meson (as a header-only [wrap](subprojects/cgal.wrap)), so no separate step is needed. CGAL's own dependencies must be available on your system beforehand: Boost >= 1.74, Eigen >= 3.3.4, GMP, and MPFR. Boost is located by meson's built-in Boost detection and Eigen via pkg-config. GMP and MPFR are looked up via pkg-config first, falling back to plain library lookup on systems that ship no `gmp.pc` or `mpfr.pc`. The build fails immediately with a clear error naming whichever of these isn't found.
 
-### Using Conan
+### macOS
 
-First (using linux as example)
+    brew install boost eigen gmp mpfr pkg-config
+    pip install .
 
-    pip install conan
-    conan config install -tf profiles conan_profiles
-    conan install --profile:all linux --build=missing --output-folder=$PWD/conan_deps .
+### Linux (Debian/Ubuntu)
 
-Then
+    sudo apt install libboost-dev libeigen3-dev libgmp-dev libmpfr-dev pkg-config
+    pip install .
 
-    pip install --config-settings=setup-args=--native-file=$PWD/conan_deps/conan_meson_native.ini --no-build-isolation --no-deps -e .
+### Windows, or any OS via conda-forge
 
-### Using Conda
-If you are using `conda` to manage build dependencies, then start by running the following script to generate the necessary pkg config files
+Boost, GMP, and MPFR don't build cleanly under plain MSVC, so conda-forge is the simplest route on Windows (and works identically on any OS):
 
-    python tools/generate_pkgs.py
+    conda install -c conda-forge boost eigen gmp mpfr pkg-config
+    pip install .
 
-This will generate pkg files for Boost, CGAL, Eigen, and TBB (TBB already exists but we want to include tbbmalloc in addition to tbb) and save them in `$CONDA_PREFIX/lib/pkgconfig` which is where conda stores its pkg config files (an alternative output directory can also be specified).
-
-**Note** This path probably needs to be adjusted on windows!
-
-You must also install pkg-config from conda as pkg-config provided by the system (e.g., in /bin/) will not search this particular directory
-
-    conda install pkg-config
-
-Next, for an editable (developer) installation, use
+For an editable (developer) install, add `-e` and drop build isolation once the above dependencies are installed:
 
     pip install --no-build-isolation --no-deps -e .

@@ -1,0 +1,9 @@
+[wrap-file]
+directory = CGAL-6.2
+source_url = https://github.com/CGAL/cgal/releases/download/v6.2/CGAL-6.2-library.tar.xz
+source_filename = CGAL-6.2-library.tar.xz
+source_hash = f75d2b2486842fb47222c780c7241c262d392802d0811143c4e9b539972ee55b
+patch_directory = cgal
+
+[provide]
+dependency_names = cgal
