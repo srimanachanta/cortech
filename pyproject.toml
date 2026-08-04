@@ -39,6 +39,14 @@ test-command = "pytest {package}/tests"
 [tool.cibuildwheel.macos]
 before-all = "brew install boost eigen gmp mpfr pkg-config"
 
+# Homebrew bottles are built against the OS they are poured on, so the gmp and
+# mpfr dylibs we vendor into the wheel carry the runner image's minimum target.
+# cibuildwheel would otherwise tag arm64 wheels macosx_11_0 and delocate would
+# refuse to bundle libraries with a higher floor. Keep this in sync with the
+# macOS runner in .github/workflows/main.yaml.
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "14.0"
+
 [tool.cibuildwheel.linux]
 before-all = "dnf install -y boost-devel eigen3-devel gmp-devel mpfr-devel pkgconfig"
 manylinux-x86_64-image = "manylinux_2_34"
