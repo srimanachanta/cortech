@@ -41,11 +41,17 @@ jobs:
         miniforge-version: latest
         channels: conda-forge
 
-    - name: Export PKG_CONFIG_PATH (Windows only)
+      # gmp.pc and mpfr.pc land in lib/pkgconfig but eigen3.pc lands in
+      # share/pkgconfig, so both go on the search path (";" separated, as
+      # pkg-config expects on Windows). Boost ships no .pc file at all and
+      # meson only looks at compiler default include dirs and a few hardcoded
+      # C:\ locations, so it needs BOOST_ROOT to see the conda prefix.
+    - name: Export dependency search paths (Windows only)
       if: runner.os == 'Windows'
       shell: bash -el {0}
       run: |
-        echo "PKG_CONFIG_PATH=$CONDA_PREFIX/Library/lib/pkgconfig" >> "$GITHUB_ENV"
+        echo "PKG_CONFIG_PATH=$CONDA_PREFIX/Library/lib/pkgconfig;$CONDA_PREFIX/Library/share/pkgconfig" >> "$GITHUB_ENV"
+        echo "BOOST_ROOT=$CONDA_PREFIX/Library" >> "$GITHUB_ENV"
         echo "$CONDA_PREFIX/Library/bin" >> "$GITHUB_PATH"
 
       # Set persistent environment variables from vcvarsall. The tools

@@ -53,6 +53,10 @@ manylinux-x86_64-image = "manylinux_2_34"
 manylinux-aarch64-image = "manylinux_2_34"
 
 [tool.cibuildwheel.windows]
-before-all = "conda install -y -c conda-forge boost eigen gmp mpfr pkg-config"
+# libboost-devel, not boost: the latter is the Boost.Python metapackage, whose
+# newest win-64 build pins python 3.8 and numpy <2. eigen is held at 3.x to
+# match the versions dnf and Homebrew ship on the other platforms; CGAL 6.2
+# predates Eigen 5.
+before-all = 'conda install -y -c conda-forge libboost-devel "eigen<4" gmp mpfr pkg-config'
 before-build = "pip install delvewheel"
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
